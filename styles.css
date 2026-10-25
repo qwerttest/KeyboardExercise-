@@ -74,6 +74,17 @@ select {
   font-weight: 700;
 }
 
+.header-tools {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sound-btn {
+  border-radius: 999px;
+  padding: 10px 16px;
+}
+
 .stars-chip {
   background: #fff;
   border-radius: 999px;

@@ -2,6 +2,7 @@
   const STORAGE_CUSTOM = "ke_custom_words";
   const STORAGE_SELECTED = "ke_selected_banks";
   const STORAGE_STARS = "ke_stars";
+  const STORAGE_SFX = "ke_sfx_on";
 
   const KEY_LAYOUT = [
     [
@@ -234,6 +235,119 @@
     updateStars();
   }
 
+  let audioCtx = null;
+  let sfxOn = true;
+
+  function audio() {
+    const Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return null;
+    if (!audioCtx) audioCtx = new Ctx();
+    if (audioCtx.state === "suspended") audioCtx.resume();
+    return audioCtx;
+  }
+
+  function updateSfxButton() {
+    const btn = $("sfxToggle");
+    if (!btn) return;
+    btn.textContent = sfxOn ? "🔊 音效" : "🔇 静音";
+    btn.setAttribute("aria-pressed", sfxOn ? "true" : "false");
+    btn.classList.toggle("primary", sfxOn);
+  }
+
+  function tone(freq, when, dur, type, volume) {
+    const ctx = audio();
+    if (!ctx) return;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = type || "sine";
+    osc.frequency.setValueAtTime(freq, when);
+    gain.gain.setValueAtTime(0.0001, when);
+    gain.gain.exponentialRampToValueAtTime(Math.max(volume, 0.0001), when + 0.015);
+    gain.gain.exponentialRampToValueAtTime(0.0001, when + dur);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(when);
+    osc.stop(when + dur + 0.02);
+  }
+
+  function playOk() {
+    if (!sfxOn) return;
+    const ctx = audio();
+    if (!ctx) return;
+    const t = ctx.currentTime;
+    tone(523, t, 0.09, "sine", 0.12);
+    tone(784, t + 0.05, 0.12, "sine", 0.09);
+  }
+
+  function playBad() {
+    if (!sfxOn) return;
+    const ctx = audio();
+    if (!ctx) return;
+    const t = ctx.currentTime;
+    tone(220, t, 0.12, "triangle", 0.07);
+    tone(165, t + 0.06, 0.14, "triangle", 0.05);
+  }
+
+  function playHop() {
+    if (!sfxOn) return;
+    const ctx = audio();
+    if (!ctx) return;
+    const t = ctx.currentTime;
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = "sine";
+    osc.frequency.setValueAtTime(300, t);
+    osc.frequency.exponentialRampToValueAtTime(760, t + 0.12);
+    gain.gain.setValueAtTime(0.0001, t);
+    gain.gain.exponentialRampToValueAtTime(0.12, t + 0.02);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.16);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(t);
+    osc.stop(t + 0.18);
+  }
+
+  function playSplash() {
+    if (!sfxOn) return;
+    const ctx = audio();
+    if (!ctx) return;
+    const t = ctx.currentTime;
+    const len = Math.floor(ctx.sampleRate * 0.28);
+    const buffer = ctx.createBuffer(1, len, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < len; i++) data[i] = (Math.random() * 2 - 1) * (1 - i / len);
+    const src = ctx.createBufferSource();
+    src.buffer = buffer;
+    const filter = ctx.createBiquadFilter();
+    filter.type = "lowpass";
+    filter.frequency.setValueAtTime(900, t);
+    filter.frequency.exponentialRampToValueAtTime(160, t + 0.24);
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.22, t);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.28);
+    src.connect(filter);
+    filter.connect(gain);
+    gain.connect(ctx.destination);
+    src.start(t);
+    tone(170, t, 0.18, "sine", 0.08);
+  }
+
+  function playWin() {
+    if (!sfxOn) return;
+    const ctx = audio();
+    if (!ctx) return;
+    const t = ctx.currentTime;
+    [523, 659, 784, 1046].forEach((freq, i) => tone(freq, t + i * 0.08, 0.18, "sine", 0.1));
+  }
+
+  function playLose() {
+    if (!sfxOn) return;
+    const ctx = audio();
+    if (!ctx) return;
+    const t = ctx.currentTime;
+    [392, 330, 262].forEach((freq, i) => tone(freq, t + i * 0.11, 0.2, "triangle", 0.07));
+  }
+
   function renderKeyboard(containerId, hintKey) {
     const board = $(containerId);
     board.innerHTML = KEY_LAYOUT.map(
@@ -355,6 +469,7 @@
       $("kbFeedback").className = "feedback ok";
       $("kbFeedback").textContent = randomPraise();
       flashKey("kbBoard", got, "pressed");
+      playOk();
     } else if (got.length === 1) {
       state.kb.combo = 0;
       state.kb.miss += 1;
@@ -362,6 +477,7 @@
       $("kbFeedback").textContent = "再找找黄色的键～";
       flashKey("kbBoard", got, "wrong");
       updateKbStats();
+      playBad();
     }
   }
 
@@ -489,6 +605,7 @@
         renderKeyboard("spBoard", word[state.sp.typed]);
         $("spFeedback").className = "feedback ok";
         $("spFeedback").textContent = "对了，下一个字母！";
+        playOk();
       }
     } else {
       state.sp.streak = 0;
@@ -497,6 +614,7 @@
       $("spFeedback").className = "feedback bad";
       $("spFeedback").textContent = `下一个是 ${want.toUpperCase()}，看黄色的键`;
       $("spStreak").textContent = `连对 ${state.sp.streak}`;
+      playBad();
     }
   }
 
@@ -716,6 +834,7 @@
     $("fgFeedback").className = "feedback bad";
     $("fgFeedback").textContent = "扑通！对准荷叶再跳";
     updateFrogHud();
+    playSplash();
   }
 
   function finishSplash() {
@@ -723,6 +842,7 @@
     state.fg.splashUntil = 0;
     if (state.fg.lives <= 0) {
       stopFrogger();
+      playLose();
       showFrogOverlay(
         true,
         "💦",
@@ -816,6 +936,7 @@
     state.fg.score += 1;
     $("fgFeedback").className = "feedback ok";
     $("fgFeedback").textContent = randomPraise();
+    playHop();
     if (row === 0) frogWin();
     else updateFrogHud();
     drawFrog();
@@ -876,6 +997,7 @@
     flashKey("fgBoard", letter, "wrong");
     $("fgFeedback").className = "feedback bad";
     $("fgFeedback").textContent = state.fg.row === 1 ? "按 ↑ 跳上对岸" : "看黄色荷叶上的字母再跳～";
+    playBad();
   }
 
   function celebrate(label) {
@@ -900,6 +1022,7 @@
       }
     }
     if (label) toast(label);
+    playWin();
   }
 
   function renderHomeBanks() {
@@ -988,6 +1111,15 @@
   }
 
   function bind() {
+    $("sfxToggle").addEventListener("click", () => {
+      sfxOn = !sfxOn;
+      storageSet(STORAGE_SFX, sfxOn ? "1" : "0");
+      updateSfxButton();
+      if (sfxOn) playOk();
+    });
+    window.addEventListener("pointerdown", () => {
+      if (sfxOn) audio();
+    });
     $("goKeyboard").addEventListener("click", startKeyboard);
     $("goSpelling").addEventListener("click", startSpelling);
     $("goFrogger").addEventListener("click", startFrogger);
@@ -1136,6 +1268,8 @@
 
   loadCustom();
   loadSelected();
+  sfxOn = storageGet(STORAGE_SFX) !== "0";
+  updateSfxButton();
   updateStars();
   renderHomeBanks();
   bind();
