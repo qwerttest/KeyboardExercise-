@@ -1,0 +1,10 @@
+happy,开心
+smile,微笑
+friend,朋友
+hello,你好
+thank,谢谢
+please,请
+good,好
+morning,早上
+night,夜晚
+schoolbag,书包

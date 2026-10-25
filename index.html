@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>键盘小勇士 · Keyboard Exercise</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <div class="logo">
+        <div class="logo-mark">⌨️</div>
+        <div>
+          <h1>键盘小勇士</h1>
+          <p>认键 · 过河 · 拼单词，边玩边学</p>
+        </div>
+      </div>
+      <div class="stars-chip" id="totalStars">⭐ 0</div>
+    </header>
+
+    <main>
+      <section id="home" class="screen active">
+        <div class="hero-grid">
+          <div>
+            <button class="mode-card keyboard" id="goKeyboard">
+              <div style="font-size: 42px">🎯</div>
+              <h2>认识键盘</h2>
+              <p>屏幕会亮起按键，按下电脑上对应的键就能得分。</p>
+            </button>
+            <button class="mode-card frogger" id="goFrogger" style="margin-top: 16px">
+              <div style="font-size: 42px">🐸</div>
+              <h2>青蛙过河</h2>
+              <p>荷叶上有字母，按对键小青蛙就能跳；掉进水里会损失一条命。</p>
+            </button>
+            <button class="mode-card spelling" id="goSpelling" style="margin-top: 16px">
+              <div style="font-size: 42px">🔤</div>
+              <h2>拼写单词</h2>
+              <p>看中文、听发音，把英文字母一个一个敲出来。</p>
+            </button>
+          </div>
+          <aside class="side-panel">
+            <div class="panel">
+              <h3>当前词库</h3>
+              <div class="bank-list" id="homeBanks"></div>
+              <p class="help" id="homeWordCount"></p>
+              <button class="btn primary" id="goBanks">管理词库 / 导入单词</button>
+            </div>
+            <div class="panel">
+              <h3>怎么玩</h3>
+              <p class="help">
+                1. 先玩「认识键盘」，熟悉字母在哪里。<br />
+                2. 再玩「青蛙过河」，按荷叶上的字母跳过去。<br />
+                3. 然后玩「拼写单词」，把英文字母一个一个敲出来。<br />
+                4. 家长可以导入课文单词：每行一个，或 `apple,苹果`。
+              </p>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section id="keyboard" class="screen" hidden>
+        <div class="game-top">
+          <button class="btn" data-back>← 返回</button>
+          <div class="stats">
+            <div class="stat" id="kbScore">得分 0</div>
+            <div class="stat" id="kbCombo">连击 0</div>
+            <div class="stat" id="kbMiss">失误 0</div>
+          </div>
+        </div>
+        <div class="toolbar">
+          <button class="btn primary" data-kb-set="letters">字母 ABC</button>
+          <button class="btn" data-kb-set="home">手指家园 ASDF</button>
+          <button class="btn" data-kb-set="numbers">数字 123</button>
+          <button class="btn" data-kb-set="all">全部按键</button>
+        </div>
+        <div class="target-board">
+          <div class="target-hint" id="kbHint">请按下这个键</div>
+          <div class="target-letter" id="kbTarget">A</div>
+          <div class="feedback" id="kbFeedback"></div>
+        </div>
+        <div class="keyboard" id="kbBoard"></div>
+      </section>
+
+      <section id="spelling" class="screen" hidden>
+        <div class="game-top">
+          <button class="btn" data-back>← 返回</button>
+          <div class="stats">
+            <div class="stat" id="spScore">完成 0</div>
+            <div class="stat" id="spStreak">连对 0</div>
+            <div class="stat" id="spRemain">剩余 0</div>
+          </div>
+        </div>
+        <div class="toolbar">
+          <button class="btn primary" id="speakWord">🔊 读单词</button>
+          <button class="btn" id="skipWord">跳过</button>
+          <button class="btn good" id="nextRound">换一组</button>
+        </div>
+        <div class="target-board">
+          <div class="meaning" id="spMeaning">苹果</div>
+          <div class="word-row" id="spSlots"></div>
+          <div class="feedback" id="spFeedback">按键盘上的字母开始拼写</div>
+        </div>
+        <div class="keyboard" id="spBoard"></div>
+      </section>
+
+      <section id="frogger" class="screen" hidden>
+        <div class="game-top">
+          <button class="btn" data-back>← 返回</button>
+          <div class="stats">
+            <div class="stat" id="fgCross">过河 0</div>
+            <div class="stat" id="fgScore">得分 0</div>
+            <div class="stat" id="fgLives">生命 🐸🐸🐸</div>
+          </div>
+        </div>
+        <div class="toolbar">
+          <button class="btn primary" data-fg-diff="easy">轻松</button>
+          <button class="btn" data-fg-diff="normal">普通</button>
+          <button class="btn" data-fg-diff="hard">挑战</button>
+          <button class="btn good" id="fgRestart">重新开始</button>
+        </div>
+        <div class="frog-stage">
+          <div class="frog-world" id="frogWorld"></div>
+          <div class="frog-overlay" id="frogOverlay" hidden>
+            <div class="frog-overlay-card">
+              <div class="frog-overlay-emoji" id="frogOverlayEmoji">🐸</div>
+              <h2 id="frogOverlayTitle">过河成功！</h2>
+              <p id="frogOverlayText"></p>
+              <button class="btn primary" id="frogOverlayBtn">再玩一次</button>
+            </div>
+          </div>
+        </div>
+        <div class="target-board frog-hint-board">
+          <div class="target-hint" id="fgHint">按下字母，跳上荷叶</div>
+          <div class="target-letter" id="fgTarget">A</div>
+          <div class="feedback" id="fgFeedback">用 ← → 对准，再按黄色字母往前跳，按 ↑ 上岸</div>
+        </div>
+        <div class="keyboard" id="fgBoard"></div>
+      </section>
+
+      <section id="banks" class="screen" hidden>
+        <div class="game-top">
+          <button class="btn" data-back>← 返回</button>
+          <h2 style="margin: 0">词库管理</h2>
+        </div>
+        <div class="panel" style="margin-bottom: 16px">
+          <h3>选择练习哪些词</h3>
+          <div class="bank-grid" id="bankGrid"></div>
+        </div>
+        <div class="panel">
+          <h3>自定义导入</h3>
+          <p class="help">
+            支持纯单词、`word,中文`、或 JSON。也可以上传 .txt / .csv / .json。导入后会保存在这台电脑上。
+          </p>
+          <p>
+            <input type="file" id="importFile" accept=".txt,.csv,.json" />
+          </p>
+          <textarea
+            id="importText"
+            placeholder="apple,苹果&#10;cat,猫&#10;happy"
+          ></textarea>
+          <div class="toolbar" style="margin-top: 12px">
+            <button class="btn primary" id="importBtn">导入到自定义词库</button>
+            <button class="btn warn" id="clearCustom">清空自定义词库</button>
+          </div>
+          <p class="help" id="customInfo"></p>
+        </div>
+      </section>
+    </main>
+
+    <div class="toast" id="toast"></div>
+    <div class="confetti" id="confetti"></div>
+    <script src="./words.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>
